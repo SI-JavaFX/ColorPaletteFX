@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.si.colorpalettefx.model.ColorPalette;
+import com.si.colorpalettefx.model.ColorPalette.NamedColor;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -69,7 +70,7 @@ public class ColorPaletteController {
             // Convert the result to a palette when the add button is clicked
             dialog.setResultConverter(dialogButton -> {
                 if (dialogButton == addButtonType) {
-                    return controller.getResult();
+                    return controller.getResultAsColors();
                 }
                 return null;
             });
@@ -113,11 +114,13 @@ public class ColorPaletteController {
         gridPane.setVgap(5);
 
         // Add color squares to the grid
-        List<Color> colors = palette.getColors();
-        int numCols = (int) Math.ceil(Math.sqrt(colors.size())); // Calculate grid dimensions
+        List<ColorPalette.NamedColor> namedColors = palette.getNamedColors();
+        int numCols = (int) Math.ceil(Math.sqrt(namedColors.size())); // Calculate grid dimensions
 
-        for (int i = 0; i < colors.size(); i++) {
-            Color color = colors.get(i);
+        for (int i = 0; i < namedColors.size(); i++) {
+            ColorPalette.NamedColor namedColor = namedColors.get(i);
+            Color color = namedColor.getColor();
+            String colorName = namedColor.getName();
 
             // Create a square for each color
             StackPane colorSquare = new StackPane();
@@ -130,8 +133,12 @@ public class ColorPaletteController {
             );
             Tooltip.install(colorSquare, tooltip);
 
-            // Add the square to the grid
-            gridPane.add(colorSquare, i % numCols, i / numCols);
+            // Create a titled pane with the color name as the title
+            TitledPane titledPane = new TitledPane(colorName, colorSquare);
+            titledPane.setCollapsible(false);
+
+            // Add the titled pane to the grid
+            gridPane.add(titledPane, i % numCols, i / numCols);
         }
 
         // Add the grid to a scroll pane in case there are many colors
@@ -259,6 +266,120 @@ public class ColorPaletteController {
     }
 
     /**
+     * Handles the "Load Legacy Palette" menu item click.
+     * Opens a file chooser dialog to load color palettes from a legacy JSON file format.
+     */
+    @FXML
+    protected void onLoadLegacyPalettesMenuItemClick() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Load Legacy Color Palettes");
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("JSON Files", "*.json"));
+
+        // Get the window from any control in the scene
+        Stage stage = (Stage) paletteTabPane.getScene().getWindow();
+        File file = fileChooser.showOpenDialog(stage);
+
+        if (file != null) {
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                // Create a custom class to handle the legacy format
+                List<LegacyColorPalette> loadedPalettes = mapper.readValue(file, 
+                        new TypeReference<List<LegacyColorPalette>>() {});
+
+                if (loadedPalettes != null && !loadedPalettes.isEmpty()) {
+                    for (LegacyColorPalette legacyPalette : loadedPalettes) {
+                        // Convert legacy palette to new format
+                        ColorPalette palette = legacyPalette.toColorPalette();
+
+                        // Check if a palette with this name already exists
+                        boolean exists = colorPalettes.stream()
+                                .anyMatch(p -> p.getName().equals(palette.getName()));
+
+                        if (!exists) {
+                            addPalette(palette);
+                        }
+                    }
+                    showAlert(Alert.AlertType.INFORMATION, "Load Successful", 
+                            "Legacy Palettes Loaded", 
+                            "Legacy color palettes were successfully loaded from " + file.getName());
+                } else {
+                    showAlert(Alert.AlertType.WARNING, "No Palettes", 
+                            "No Palettes Found", 
+                            "No color palettes were found in the selected file.");
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                showAlert(Alert.AlertType.ERROR, "Load Error", 
+                        "Error Loading Legacy Palettes", 
+                        "An error occurred while loading the legacy palettes: " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * A helper class to deserialize the legacy color palette format.
+     */
+    private static class LegacyColorPalette {
+        private String name;
+        private List<String> colors;
+        private List<String> colorHexCodes;
+
+        // Default constructor for Jackson
+        public LegacyColorPalette() {
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public List<String> getColors() {
+            return colors;
+        }
+
+        public void setColors(List<String> colors) {
+            this.colors = colors;
+        }
+
+        public List<String> getColorHexCodes() {
+            return colorHexCodes;
+        }
+
+        public void setColorHexCodes(List<String> colorHexCodes) {
+            this.colorHexCodes = colorHexCodes;
+        }
+
+        /**
+         * Converts this legacy palette to the new ColorPalette format.
+         * 
+         * @return a new ColorPalette with the same name and colors
+         */
+        public ColorPalette toColorPalette() {
+            List<Color> colorList = new ArrayList<>();
+
+            // Use colors if available, otherwise use colorHexCodes
+            List<String> hexColors = (colors != null && !colors.isEmpty()) ? colors : colorHexCodes;
+
+            if (hexColors != null) {
+                for (String hexColor : hexColors) {
+                    try {
+                        Color color = Color.web(hexColor);
+                        colorList.add(color);
+                    } catch (IllegalArgumentException e) {
+                        // Skip invalid colors
+                        System.err.println("Invalid color format: " + hexColor);
+                    }
+                }
+            }
+            return new ColorPalette(name, colorList);
+        }
+    }
+
+    /**
      * Handles the "Quit" menu item click.
      * Exits the application.
      */
@@ -315,7 +436,7 @@ public class ColorPaletteController {
 
             // Set the palette data in the controller
             controller.setPaletteName(selectedPalette.getName());
-            controller.setColors(selectedPalette.getColors());
+            controller.setNamedColors(selectedPalette.getNamedColors());
 
             // Create the dialog
             Dialog<Pair<String, List<Color>>> dialog = new Dialog<>();
@@ -335,7 +456,7 @@ public class ColorPaletteController {
             // Convert the result to a palette when the save button is clicked
             dialog.setResultConverter(dialogButton -> {
                 if (dialogButton == saveButtonType) {
-                    return controller.getResult();
+                    return controller.getResultAsColors();
                 }
                 return null;
             });
@@ -366,7 +487,12 @@ public class ColorPaletteController {
 
                     // Update the palette
                     paletteCopy.setName(name);
-                    paletteCopy.setColors(colors);
+
+                    // Get the named colors from the controller
+                    List<NamedColor> namedColors = controller.getColorList().getItems();
+
+                    // Update the palette with the named colors
+                    paletteCopy.setNamedColors(namedColors);
 
                     // Update the tab
                     tabCopy.setText(name);

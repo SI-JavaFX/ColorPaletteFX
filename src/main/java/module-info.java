@@ -10,7 +10,7 @@ module com.si.colorpalettefx {
     requires com.fasterxml.jackson.databind;
     requires com.fasterxml.jackson.core;
 
-    opens com.si.colorpalettefx to javafx.fxml;
+    opens com.si.colorpalettefx to javafx.fxml, com.fasterxml.jackson.databind;
     opens com.si.colorpalettefx.model to com.fasterxml.jackson.databind;
     exports com.si.colorpalettefx;
     exports com.si.colorpalettefx.model;

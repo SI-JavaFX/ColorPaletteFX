@@ -13,17 +13,20 @@
    <padding>
       <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
    </padding>
-   
+
    <Label text="Palette Name:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
    <TextField fx:id="paletteName" promptText="Palette Name" GridPane.columnIndex="1" GridPane.rowIndex="0" />
-   
+
    <Label text="Color:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
    <ColorPicker fx:id="colorPicker" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-   <Button fx:id="addColorButton" onAction="#onAddColorButtonClick" text="Add Color" GridPane.columnIndex="2" GridPane.rowIndex="1" />
-   
-   <ListView fx:id="colorList" prefHeight="200.0" GridPane.columnIndex="0" GridPane.columnSpan="3" GridPane.rowIndex="2" />
-   
-   <HBox alignment="CENTER_LEFT" spacing="10" GridPane.columnIndex="0" GridPane.columnSpan="3" GridPane.rowIndex="3">
+
+   <Label text="Color Name:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+   <TextField fx:id="colorName" promptText="Color Name" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+   <Button fx:id="addColorButton" onAction="#onAddColorButtonClick" text="Add Color" prefWidth="120" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+
+   <ListView fx:id="colorList" prefHeight="200.0" GridPane.columnIndex="0" GridPane.columnSpan="3" GridPane.rowIndex="3" />
+
+   <HBox alignment="CENTER_LEFT" spacing="10" GridPane.columnIndex="0" GridPane.columnSpan="3" GridPane.rowIndex="4">
       <Button fx:id="removeColorButton" onAction="#onRemoveColorButtonClick" text="Remove Selected" />
    </HBox>
 </GridPane>

@@ -26,6 +26,7 @@
                <items>
                   <MenuItem mnemonicParsing="false" onAction="#onSavePalettesMenuItemClick" text="Save Palettes..." />
                   <MenuItem mnemonicParsing="false" onAction="#onLoadPalettesMenuItemClick" text="Load Palettes..." />
+                  <MenuItem mnemonicParsing="false" onAction="#onLoadLegacyPalettesMenuItemClick" text="Load Legacy Palette..." />
                   <SeparatorMenuItem mnemonicParsing="false" />
                   <MenuItem mnemonicParsing="false" onAction="#onQuitMenuItemClick" text="Quit" />
                </items>

@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import javafx.scene.paint.Color;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -13,13 +15,74 @@ import java.util.stream.Collectors;
 public class ColorPalette {
     private String name;
     @JsonIgnore
-    private List<Color> colors;
+    private List<NamedColor> namedColors;
+
+    /**
+     * Represents a color with a name.
+     */
+    public static class NamedColor {
+        private Color color;
+        private String name;
+
+        /**
+         * Default constructor for Jackson deserialization
+         */
+        public NamedColor() {
+        }
+
+        /**
+         * Creates a new named color with the given color and name.
+         *
+         * @param color the color
+         * @param name the name of the color
+         */
+        public NamedColor(Color color, String name) {
+            this.color = color;
+            this.name = name;
+        }
+
+        /**
+         * Returns the color.
+         *
+         * @return the color
+         */
+        public Color getColor() {
+            return color;
+        }
+
+        /**
+         * Sets the color.
+         *
+         * @param color the new color
+         */
+        public void setColor(Color color) {
+            this.color = color;
+        }
+
+        /**
+         * Returns the name of the color.
+         *
+         * @return the name of the color
+         */
+        public String getName() {
+            return name;
+        }
+
+        /**
+         * Sets the name of the color.
+         *
+         * @param name the new name of the color
+         */
+        public void setName(String name) {
+            this.name = name;
+        }
+    }
 
     /**
      * Default constructor for Jackson deserialization
      */
     public ColorPalette() {
-        this.colors = new ArrayList<>();
+        this.namedColors = new ArrayList<>();
     }
 
     /**
@@ -29,7 +92,7 @@ public class ColorPalette {
      */
     public ColorPalette(String name) {
         this.name = name;
-        this.colors = new ArrayList<>();
+        this.namedColors = new ArrayList<>();
     }
 
     /**
@@ -40,7 +103,15 @@ public class ColorPalette {
      */
     public ColorPalette(String name, List<Color> colors) {
         this.name = name;
-        this.colors = new ArrayList<>(colors);
+        this.namedColors = new ArrayList<>();
+        for (Color color : colors) {
+            // Default the color name to its hex code
+            String colorName = String.format("#%02X%02X%02X",
+                (int) (color.getRed() * 255),
+                (int) (color.getGreen() * 255),
+                (int) (color.getBlue() * 255));
+            this.namedColors.add(new NamedColor(color, colorName));
+        }
     }
 
     /**
@@ -67,7 +138,18 @@ public class ColorPalette {
      * @return the list of colors in the palette
      */
     public List<Color> getColors() {
-        return new ArrayList<>(colors);
+        return namedColors.stream()
+                .map(NamedColor::getColor)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns the list of named colors in the palette.
+     *
+     * @return the list of named colors in the palette
+     */
+    public List<NamedColor> getNamedColors() {
+        return new ArrayList<>(namedColors);
     }
 
     /**
@@ -76,7 +158,25 @@ public class ColorPalette {
      * @param colors the new list of colors in the palette
      */
     public void setColors(List<Color> colors) {
-        this.colors = new ArrayList<>(colors);
+        this.namedColors.clear();
+        for (Color color : colors) {
+            // Default the color name to its hex code
+            String colorName = String.format("#%02X%02X%02X",
+                (int) (color.getRed() * 255),
+                (int) (color.getGreen() * 255),
+                (int) (color.getBlue() * 255));
+            this.namedColors.add(new NamedColor(color, colorName));
+        }
+    }
+
+    /**
+     * Sets the list of named colors in the palette.
+     *
+     * @param namedColors the new list of named colors in the palette
+     */
+    public void setNamedColors(List<NamedColor> namedColors) {
+        this.namedColors.clear();
+        this.namedColors.addAll(namedColors);
     }
 
     /**
@@ -85,7 +185,22 @@ public class ColorPalette {
      * @param color the color to add
      */
     public void addColor(Color color) {
-        colors.add(color);
+        // Default the color name to its hex code
+        String colorName = String.format("#%02X%02X%02X",
+            (int) (color.getRed() * 255),
+            (int) (color.getGreen() * 255),
+            (int) (color.getBlue() * 255));
+        namedColors.add(new NamedColor(color, colorName));
+    }
+
+    /**
+     * Adds a named color to the palette.
+     *
+     * @param color the color to add
+     * @param name the name of the color
+     */
+    public void addColor(Color color, String name) {
+        namedColors.add(new NamedColor(color, name));
     }
 
     /**
@@ -95,7 +210,7 @@ public class ColorPalette {
      * @return true if the color was removed, false otherwise
      */
     public boolean removeColor(Color color) {
-        return colors.remove(color);
+        return namedColors.removeIf(nc -> nc.getColor().equals(color));
     }
 
     /**
@@ -104,31 +219,44 @@ public class ColorPalette {
      * @return the number of colors in the palette
      */
     public int size() {
-        return colors.size();
+        return namedColors.size();
     }
 
     /**
-     * Returns the list of color hex codes for JSON serialization.
+     * Returns the list of color data for JSON serialization.
      *
-     * @return the list of color hex codes
+     * @return the list of color data
      */
-    @JsonProperty("colorHexCodes")
-    public List<String> getColorHexCodes() {
-        return colors.stream()
-                .map(this::toHexString)
+    @JsonProperty("colors")
+    public List<Map<String, String>> getColorData() {
+        return namedColors.stream()
+                .map(nc -> {
+                    Map<String, String> colorData = new HashMap<>();
+                    colorData.put("name", nc.getName());
+                    colorData.put("hex", toHexString(nc.getColor()));
+                    return colorData;
+                })
                 .collect(Collectors.toList());
     }
 
     /**
-     * Sets the colors from a list of hex codes for JSON deserialization.
+     * Sets the colors from a list of color data for JSON deserialization.
      *
-     * @param hexCodes the list of color hex codes
+     * @param colorData the list of color data
      */
-    @JsonProperty("colorHexCodes")
-    public void setColorHexCodes(List<String> hexCodes) {
-        this.colors.clear();
-        if (hexCodes != null) {
-            hexCodes.forEach(hex -> this.colors.add(Color.web(hex)));
+    @JsonProperty("colors")
+    public void setColorData(List<Map<String, String>> colorData) {
+        this.namedColors.clear();
+        if (colorData != null) {
+            colorData.forEach(data -> {
+                String hex = data.get("hex");
+                String name = data.get("name");
+                if (hex != null) {
+                    Color color = Color.web(hex);
+                    // If name is null, use hex as the name
+                    this.namedColors.add(new NamedColor(color, name != null ? name : hex));
+                }
+            });
         }
     }
 

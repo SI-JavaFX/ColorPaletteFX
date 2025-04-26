@@ -9,6 +9,9 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.*;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -110,8 +113,8 @@ public class ColorPaletteController {
 
         // Create a grid pane to display the colors
         GridPane gridPane = new GridPane();
-        gridPane.setHgap(5);
-        gridPane.setVgap(5);
+        gridPane.setHgap(8);
+        gridPane.setVgap(8);
 
         // Add color squares to the grid
         List<ColorPalette.NamedColor> namedColors = palette.getNamedColors();
@@ -136,6 +139,43 @@ public class ColorPaletteController {
             // Create a titled pane with the color name as the title
             TitledPane titledPane = new TitledPane(colorName, colorSquare);
             titledPane.setCollapsible(false);
+
+            // Add hover effect to the titled pane
+            titledPane.setOnMouseEntered(event -> {
+                titledPane.setStyle("-fx-background-color: #e4ade6; -fx-effect: dropshadow(three-pass-box, rgba(183,1,1,0.6), 8, 0, 1, 1);");
+            });
+
+            titledPane.setOnMouseExited(event -> {
+                titledPane.setStyle("-fx-background-color: transparent;");
+            });
+
+            // Create context menu for right-click
+            ContextMenu contextMenu = new ContextMenu();
+
+            // Add menu items for copying RGB and name
+            MenuItem copyRgbItem = new MenuItem("Copy RGB Value");
+            copyRgbItem.setOnAction(event -> {
+                String rgbValue = "#" + toHexString(color);
+                copyToClipboard(rgbValue);
+                showAlert(Alert.AlertType.INFORMATION, "Copied", "RGB Value Copied", 
+                        "RGB value " + rgbValue + " has been copied to clipboard.");
+            });
+
+            MenuItem copyNameItem = new MenuItem("Copy Color Name");
+            copyNameItem.setOnAction(event -> {
+                copyToClipboard(colorName);
+                showAlert(Alert.AlertType.INFORMATION, "Copied", "Color Name Copied", 
+                        "Color name \"" + colorName + "\" has been copied to clipboard.");
+            });
+
+            contextMenu.getItems().addAll(copyRgbItem, copyNameItem);
+
+            // Add context menu to the color square
+            colorSquare.setOnMouseClicked(event -> {
+                if (event.getButton() == MouseButton.SECONDARY) {
+                    contextMenu.show(colorSquare, event.getScreenX(), event.getScreenY());
+                }
+            });
 
             // Add the titled pane to the grid
             gridPane.add(titledPane, i % numCols, i / numCols);
@@ -263,6 +303,18 @@ public class ColorPaletteController {
         alert.setHeaderText(header);
         alert.setContentText(content);
         alert.showAndWait();
+    }
+
+    /**
+     * Copies the given text to the system clipboard.
+     *
+     * @param text the text to copy to the clipboard
+     */
+    private void copyToClipboard(String text) {
+        final Clipboard clipboard = Clipboard.getSystemClipboard();
+        final ClipboardContent content = new ClipboardContent();
+        content.putString(text);
+        clipboard.setContent(content);
     }
 
     /**

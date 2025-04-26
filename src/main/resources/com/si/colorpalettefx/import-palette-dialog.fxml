@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox fx:id="dialogContent" spacing="10" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.si.colorpalettefx.ImportPaletteDialogController">
+   <padding>
+      <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+   </padding>
+   
+   <Label text="Enter palette data:" />
+   <TextArea fx:id="paletteTextArea" prefRowCount="10" prefColumnCount="30" promptText="Enter palette data in the format:&#10;Palette Name&#10;#RRGGBB&#10;#RRGGBB&#10;..." />
+   <Label fx:id="exampleLabel" text="Example:&#10;Classy Palette&#10;#b1b695&#10;#464838&#10;#aaad9b&#10;#87bcc0&#10;#53878a" />
+</VBox>
